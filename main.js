@@ -51,6 +51,42 @@
     }
   }
 
+  // Auto-hide header: slides away while scrolling down, returns on the first small scroll up
+  if (header) {
+    var HIDE_AFTER = 120;   // always visible near the top of the page
+    var SCROLL_DELTA = 6;   // ignore tiny jitter
+    var lastScrollY = window.scrollY;
+    var scrollTicking = false;
+
+    var updateHeaderVisibility = function () {
+      scrollTicking = false;
+      var y = window.scrollY;
+      var menuOpen = mobileMenu && mobileMenu.classList.contains('open');
+      if (menuOpen || y < HIDE_AFTER) {
+        header.classList.remove('is-hidden');
+      } else if (y > lastScrollY + SCROLL_DELTA) {
+        header.classList.add('is-hidden');
+      } else if (y < lastScrollY - SCROLL_DELTA) {
+        header.classList.remove('is-hidden');
+      } else {
+        return;
+      }
+      lastScrollY = y;
+    };
+
+    window.addEventListener('scroll', function () {
+      if (!scrollTicking) {
+        scrollTicking = true;
+        requestAnimationFrame(updateHeaderVisibility);
+      }
+    }, { passive: true });
+
+    // Keyboard users tabbing into the header always get it back
+    header.addEventListener('focusin', function () {
+      header.classList.remove('is-hidden');
+    });
+  }
+
   if (hamburger && mobileMenu) {
     hamburger.addEventListener('click', function () {
       var isOpen = mobileMenu.classList.toggle('open');
@@ -649,37 +685,46 @@
     updatePricing();
   }
 
-  // Fallback for any standalone area slider (e.g. on other pages)
-  var fallbackSlider = document.getElementById('area-slider');
-  var fallbackInput = document.getElementById('area-input');
-  var packageDisplays = document.querySelectorAll('[data-package-price]');
+  // 5. ENQUIRY FORM (contact.html) — no backend, so the enquiry is handed to WhatsApp, prefilled
+  var enquiryForm = document.getElementById('enquiry-form');
+  if (enquiryForm) {
+    var enquiryStatus = document.getElementById('enquiry-status');
+    var fieldValue = function (id) {
+      var el = enquiryForm.querySelector('#' + id);
+      return el ? el.value.trim() : '';
+    };
 
-  if (fallbackSlider && fallbackInput && packageDisplays.length > 0) {
-    function updateFallback(val) {
-      var a = parseInt(val, 10);
-      if (isNaN(a) || a < 100) a = 1000;
-      packageDisplays.forEach(function (disp) {
-        var r = parseInt(disp.getAttribute('data-package-price'), 10);
-        if (!isNaN(r)) {
-          disp.textContent = '₹' + (r * a).toLocaleString('en-IN');
-        }
-      });
+    // Arriving from the pricing page (/contact?plan=Premium) prefills the chosen package
+    var planParam = new URLSearchParams(window.location.search).get('plan');
+    var messageField = enquiryForm.querySelector('#message');
+    if (planParam && messageField && !messageField.value) {
+      messageField.value = 'I am interested in the ' + planParam + ' package.';
     }
 
-    fallbackSlider.addEventListener('input', function () {
-      fallbackInput.value = this.value;
-      updateFallback(this.value);
-    });
+    enquiryForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var honeypot = enquiryForm.querySelector('[name="_honeypot"]');
+      if (honeypot && honeypot.value) return;
 
-    fallbackInput.addEventListener('input', function () {
-      fallbackSlider.value = this.value;
-      updateFallback(this.value);
-    });
+      var typeSelect = enquiryForm.querySelector('#projectType');
+      var lines = [
+        'Hello SUCI Constructions, I would like to enquire about a project.',
+        'Name: ' + fieldValue('name'),
+        'Phone: ' + fieldValue('phone')
+      ];
+      if (fieldValue('email')) lines.push('Email: ' + fieldValue('email'));
+      if (typeSelect) lines.push('Project type: ' + typeSelect.options[typeSelect.selectedIndex].text);
+      if (fieldValue('location')) lines.push('Plot location: ' + fieldValue('location'));
+      if (fieldValue('message')) lines.push('Message: ' + fieldValue('message'));
 
-    updateFallback(fallbackInput.value || 1000);
+      window.open('https://wa.me/917386858421?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
+      if (enquiryStatus) {
+        enquiryStatus.textContent = 'WhatsApp is opening with your enquiry — just press send. If it did not open, call us on +91 73868 58421.';
+      }
+    });
   }
 
-  // 5. YOUTUBE EMBED LOCAL PROTOCOL HANDLING (contact.html)
+  // 6. YOUTUBE EMBED LOCAL PROTOCOL HANDLING (contact.html)
   var videoFallback = document.getElementById('video-local-fallback');
   var ytIframe = document.getElementById('youtube-iframe');
   if (videoFallback && ytIframe && window.location.protocol === 'file:') {
