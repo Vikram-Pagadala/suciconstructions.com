@@ -74,6 +74,14 @@
       }
     });
 
+    // Floating glass menu: tapping outside the panel closes it
+    document.addEventListener('click', function (e) {
+      if (mobileMenu.classList.contains('open') &&
+          !mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+        hamburger.click();
+      }
+    });
+
     var mobileLinks = mobileMenu.querySelectorAll('a');
     mobileLinks.forEach(function (link) {
       link.addEventListener('click', function () {
@@ -87,6 +95,38 @@
         });
         onScroll();
       });
+    });
+  }
+
+  // Liquid glass pill that glides between desktop nav links on hover
+  var headerNav = document.querySelector('.header-nav');
+  if (headerNav) {
+    var navPill = document.createElement('span');
+    navPill.className = 'nav-glass-pill';
+    navPill.setAttribute('aria-hidden', 'true');
+    headerNav.appendChild(navPill);
+
+    var moveNavPill = function (link) {
+      if (!navPill.classList.contains('visible')) {
+        // First hover: appear in place instead of sliding in from the left
+        navPill.style.transition = 'none';
+        navPill.style.width = link.offsetWidth + 'px';
+        navPill.style.transform = 'translateX(' + link.offsetLeft + 'px)';
+        void navPill.offsetWidth;
+        navPill.style.transition = '';
+      }
+      navPill.style.width = link.offsetWidth + 'px';
+      navPill.style.transform = 'translateX(' + link.offsetLeft + 'px)';
+      navPill.classList.add('visible');
+    };
+
+    headerNav.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('mouseenter', function () { moveNavPill(link); });
+      link.addEventListener('focus', function () { moveNavPill(link); });
+      link.addEventListener('blur', function () { navPill.classList.remove('visible'); });
+    });
+    headerNav.addEventListener('mouseleave', function () {
+      navPill.classList.remove('visible');
     });
   }
 
@@ -296,6 +336,7 @@
         toggleHeroBtn.textContent = isShowingFinished ? 'Show Structure Drawing' : 'Show Finished Building';
         heroSection.style.setProperty('--mask-center', isShowingFinished ? 'black' : 'transparent');
         heroSection.style.setProperty('--mask-edge', isShowingFinished ? 'transparent' : 'black');
+        heroSection.classList.toggle('is-inverted', isShowingFinished);
         if (heroRingLabel) {
           heroRingLabel.textContent = isShowingFinished ? 'STRUCTURE' : 'FINISHED';
         }
