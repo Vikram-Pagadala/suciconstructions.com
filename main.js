@@ -103,9 +103,20 @@
     var LOGO_Y = 19.8;
     var LOGO_R = 78;
 
+    // Logo position inside the square mobile image (fraction of its width / height)
+    var LOGO_SQ_U = 0.597;
+    var LOGO_SQ_V = 0.148;
+
     var LENS_RADIUS = 85;
     var FEATHER = 28;
     var LERP = 0.14;
+    var TOUCH_HOLD_MS = 900;
+
+    var mobileHeroMq = window.matchMedia && window.matchMedia('(max-width: 1023px)');
+    var heroImg = heroStage.querySelector('.hero-layer-final img');
+
+    var restX = LOGO_X;
+    var restY = LOGO_Y;
 
     var currX = LOGO_X;
     var currY = LOGO_Y;
@@ -119,6 +130,7 @@
     var isVisible = true;
     var raf = null;
     var isShowingFinished = false;
+    var returnTimer = null;
 
     var prefersReducedMotion = window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -141,13 +153,57 @@
         if (entries[0] && entries[0].contentRect) {
           stageWidth = entries[0].contentRect.width;
           stageHeight = entries[0].contentRect.height;
+          updateRestPoint();
           applyHeroStyles();
         }
       });
       heroRo.observe(heroStage);
     }
     updateStageRect();
+    updateRestPoint();
     applyHeroStyles();
+
+    // Maps a point in the square mobile image to stage percentages (object-fit: cover)
+    function squareImageToStage(u, v) {
+      var w = stageWidth || heroStage.offsetWidth;
+      var h = stageHeight || heroStage.offsetHeight;
+      var size = Math.max(w, h);
+      var pos = heroImg ? window.getComputedStyle(heroImg).objectPosition.split(' ') : [];
+      var px = parseFloat(pos[0]);
+      var py = parseFloat(pos[1]);
+      px = isNaN(px) ? 0.5 : px / 100;
+      py = isNaN(py) ? 0.5 : py / 100;
+      return {
+        x: (((w - size) * px + u * size) / w) * 100,
+        y: (((h - size) * py + v * size) / h) * 100
+      };
+    }
+
+    // Stage point for desktop coordinates, or the matching spot in the mobile crop
+    function heroPoint(desktopX, desktopY, sqU, sqV) {
+      if (mobileHeroMq && mobileHeroMq.matches) return squareImageToStage(sqU, sqV);
+      return { x: desktopX, y: desktopY };
+    }
+
+    function updateRestPoint() {
+      var rest = heroPoint(LOGO_X, LOGO_Y, LOGO_SQ_U, LOGO_SQ_V);
+      var atRest = !isInside && returnTimer === null &&
+        targetX === restX && targetY === restY;
+      restX = rest.x;
+      restY = rest.y;
+      if (atRest) {
+        currX = targetX = restX;
+        currY = targetY = restY;
+      }
+    }
+
+    function returnToRest() {
+      returnTimer = null;
+      targetX = restX;
+      targetY = restY;
+      targetR = LOGO_R;
+      startHeroLoop();
+    }
 
     function applyHeroStyles() {
       var r = currR > 0.1 ? currR : 0;
@@ -213,36 +269,24 @@
       startHeroLoop();
     });
 
-    heroStage.addEventListener('pointerenter', function () {
+    heroStage.addEventListener('pointerenter', function (e) {
       isInside = true;
+      clearTimeout(returnTimer);
+      returnTimer = null;
+      setHeroPointerPos(e.clientX, e.clientY);
       targetR = LENS_RADIUS;
       startHeroLoop();
     });
 
-    heroStage.addEventListener('pointerleave', function () {
+    heroStage.addEventListener('pointerleave', function (e) {
       isInside = false;
-      targetX = LOGO_X;
-      targetY = LOGO_Y;
-      targetR = LOGO_R;
-      startHeroLoop();
-    });
-
-    heroStage.addEventListener('touchmove', function (e) {
-      if (e.touches && e.touches[0]) {
-        setHeroPointerPos(e.touches[0].clientX, e.touches[0].clientY);
-        targetR = 70;
-        startHeroLoop();
+      clearTimeout(returnTimer);
+      if (e.pointerType === 'touch') {
+        // Hold the lens where the finger lifted so the reveal stays visible, then glide back
+        returnTimer = setTimeout(returnToRest, TOUCH_HOLD_MS);
+      } else {
+        returnToRest();
       }
-    }, { passive: true });
-
-    heroStage.addEventListener('touchend', function () {
-      targetR = 0;
-      startHeroLoop();
-    });
-
-    heroStage.addEventListener('touchcancel', function () {
-      targetR = 0;
-      startHeroLoop();
     });
 
     if (toggleHeroBtn) {
@@ -258,121 +302,61 @@
       });
     }
 
-    // ── HERO DISCOVERY HINTS & MOBILE COMPARISON SLIDER ──
+    // ── HERO DISCOVERY HINT & AUTO-DEMO ──
     var isTouchDevice = window.matchMedia && window.matchMedia('(hover: none)').matches;
     var heroHintEl = document.getElementById('hero-hint');
-    var heroSwipeHintEl = document.getElementById('hero-swipe-hint');
+    var heroHintText = document.getElementById('hero-hint-text');
+    var hasHeroInteracted = false;
 
-    if (isTouchDevice) {
-      // ── MOBILE: Before/After Comparison Slider ──
-      var userTouchedSlider = false;
-
-      function updateSplit(clientX) {
-        var rect = heroStage.getBoundingClientRect();
-        var pct = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100));
-        heroStage.style.setProperty('--split', pct + '%');
-      }
-
-      // Initialize slider at center
-      heroStage.style.setProperty('--split', '50%');
-
-      function dismissSwipeHint() {
-        if (heroSwipeHintEl && !heroSwipeHintEl.classList.contains('dismissed')) {
-          heroSwipeHintEl.classList.add('dismissed');
-          setTimeout(function () {
-            if (heroSwipeHintEl) heroSwipeHintEl.style.display = 'none';
-          }, 700);
-        }
-      }
-
-      // Auto-dismiss hint after 4 seconds
-      setTimeout(dismissSwipeHint, 4000);
-
-      // Touch handlers for slider dragging
-      heroStage.addEventListener('touchstart', function (e) {
-        if (e.touches && e.touches[0]) {
-          userTouchedSlider = true;
-          updateSplit(e.touches[0].clientX);
-          dismissSwipeHint();
-        }
-      }, { passive: true });
-
-      heroStage.addEventListener('touchmove', function (e) {
-        if (userTouchedSlider && e.touches && e.touches[0]) {
-          updateSplit(e.touches[0].clientX);
-        }
-      }, { passive: true });
-
-      // Auto-demo: briefly sweep the slider to show it's interactive
-      setTimeout(function () {
-        if (userTouchedSlider) return;
-        var start = null;
-        var duration = 1400;
-        function demoFrame(ts) {
-          if (userTouchedSlider) {
-            heroStage.style.setProperty('--split', '50%');
-            return;
-          }
-          if (!start) start = ts;
-          var t = Math.min((ts - start) / duration, 1);
-          var offset = Math.sin(t * Math.PI * 2) * 22;
-          heroStage.style.setProperty('--split', (50 + offset) + '%');
-          if (t < 1) requestAnimationFrame(demoFrame);
-        }
-        requestAnimationFrame(demoFrame);
-      }, 1200);
-
-    } else {
-      // ── DESKTOP: Auto-Hint Animation & Discovery Tooltip ──
-      var hasHeroInteracted = false;
-
-      // Show the discovery tooltip after a short delay
-      setTimeout(function () {
-        if (!hasHeroInteracted && heroHintEl) {
-          heroHintEl.classList.add('visible');
-        }
-      }, 1500);
-
-      // Auto-demo: Starts at SUCI logo -> gently sweeps across building -> ends right back at SUCI logo
-      setTimeout(function () {
-        if (hasHeroInteracted || !isVisible) return;
-        // Sweep down to reveal structural columns & lower facade
-        targetX = 63.5;
-        targetY = 52.0;
-        targetR = LENS_RADIUS;
-        startHeroLoop();
-
-        setTimeout(function () {
-          if (hasHeroInteracted) return;
-          // Sweep to side
-          targetX = 72.0;
-          targetY = 42.0;
-          startHeroLoop();
-        }, 900);
-
-        setTimeout(function () {
-          if (hasHeroInteracted) return;
-          // Return and end back at SUCI CONSTRUCTIONS logo
-          targetX = LOGO_X;
-          targetY = LOGO_Y;
-          targetR = LOGO_R;
-          startHeroLoop();
-        }, 1900);
-      }, 2000);
-
-      // Dismiss hint on first real hover interaction
-      heroStage.addEventListener('pointerenter', function () {
-        if (!hasHeroInteracted) {
-          hasHeroInteracted = true;
-          if (heroHintEl) {
-            heroHintEl.classList.add('dismissed');
-            setTimeout(function () {
-              if (heroHintEl) heroHintEl.style.display = 'none';
-            }, 500);
-          }
-        }
-      });
+    if (isTouchDevice && heroHintText) {
+      heroHintText.textContent = 'Touch the image to reveal';
     }
+
+    // Show the discovery tooltip after a short delay
+    setTimeout(function () {
+      if (!hasHeroInteracted && heroHintEl) {
+        heroHintEl.classList.add('visible');
+      }
+    }, 1500);
+
+    // Auto-demo: Starts at SUCI logo -> gently sweeps across building -> ends right back at SUCI logo
+    setTimeout(function () {
+      if (hasHeroInteracted || !isVisible) return;
+      // Sweep down to reveal structural columns & lower facade
+      var p = heroPoint(63.5, 52.0, 0.56, 0.45);
+      targetX = p.x;
+      targetY = p.y;
+      targetR = LENS_RADIUS;
+      startHeroLoop();
+
+      setTimeout(function () {
+        if (hasHeroInteracted) return;
+        // Sweep to side
+        p = heroPoint(72.0, 42.0, 0.72, 0.38);
+        targetX = p.x;
+        targetY = p.y;
+        startHeroLoop();
+      }, 900);
+
+      setTimeout(function () {
+        if (hasHeroInteracted) return;
+        // Return and end back at SUCI CONSTRUCTIONS logo
+        returnToRest();
+      }, 1900);
+    }, 2000);
+
+    // Dismiss hint on first real hover / touch
+    heroStage.addEventListener('pointerenter', function () {
+      if (!hasHeroInteracted) {
+        hasHeroInteracted = true;
+        if (heroHintEl) {
+          heroHintEl.classList.add('dismissed');
+          setTimeout(function () {
+            if (heroHintEl) heroHintEl.style.display = 'none';
+          }, 500);
+        }
+      }
+    });
   }
 
   // 3. PROJECTS FILTER (projects.html)
