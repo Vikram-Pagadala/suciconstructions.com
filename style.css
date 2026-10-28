@@ -651,14 +651,26 @@ a:focus-visible {
   left: 0;
   z-index: 5;
   border-radius: 50%;
-  border: 1.5px solid rgba(79, 195, 247, 0.75);
-  box-shadow: 0 0 10px rgba(79, 195, 247, 0.25), inset 0 0 10px rgba(79, 195, 247, 0.05);
+  border: 1.5px solid rgba(79, 195, 247, 0.85);
+  box-shadow: 0 0 14px rgba(79, 195, 247, 0.35), inset 0 0 10px rgba(79, 195, 247, 0.1);
   pointer-events: none;
   transition: opacity 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   will-change: transform;
+  animation: lensRestPulse 3s ease-in-out infinite;
+}
+
+@keyframes lensRestPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(79, 195, 247, 0.3), inset 0 0 8px rgba(79, 195, 247, 0.08);
+    border-color: rgba(79, 195, 247, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(79, 195, 247, 0.55), 0 0 0 4px rgba(79, 195, 247, 0.15), inset 0 0 14px rgba(79, 195, 247, 0.18);
+    border-color: rgba(79, 195, 247, 0.95);
+  }
 }
 
 .ring-tick {
@@ -810,6 +822,195 @@ a:focus-visible {
 .toggle-hero-btn:focus-visible {
   outline: 2px solid #4FC3F7;
   outline-offset: 3px;
+}
+
+/* ---- Hero: Desktop Discovery Hint ---- */
+.hero-hint {
+  position: absolute;
+  z-index: 7;
+  bottom: 24px;
+  right: 24px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(15, 32, 39, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.hero-hint svg {
+  opacity: 0.8;
+  flex-shrink: 0;
+  animation: hintCursorNudge 2s ease-in-out infinite;
+}
+@keyframes hintCursorNudge {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(3px, -2px); }
+  75% { transform: translate(-3px, 2px); }
+}
+@media (hover: hover) {
+  .hero-hint { display: flex; }
+}
+.hero-hint.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.hero-hint.dismissed {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* ---- Hero: Mobile Comparison Slider — hidden on desktop ---- */
+.hero-compare,
+.hero-compare-label,
+.hero-swipe-hint {
+  display: none;
+}
+
+@media (hover: none) {
+  /* Override the lens mask with a clip-path slider */
+  .hero-layer-structure {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0);
+    will-change: clip-path;
+  }
+
+  /* Hide the desktop toggle button — slider replaces it */
+  .toggle-hero-btn { display: none; }
+
+  /* Comparison slider track */
+  .hero-compare {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+  }
+  .hero-compare-track {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--split, 50%);
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+  }
+  .hero-compare-line {
+    flex: 1;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+  }
+  .hero-compare-knob {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(79, 195, 247, 0.8);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(79, 195, 247, 0.4);
+    color: var(--color-deccan-slate);
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+    padding: 0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    animation: compareKnobPulse 2s ease-in-out infinite;
+  }
+  @keyframes compareKnobPulse {
+    0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 0 0 0 rgba(79, 195, 247, 0.4); }
+    50% { box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 0 0 8px rgba(79, 195, 247, 0); }
+  }
+  .hero-compare-knob:active {
+    cursor: grabbing;
+    transform: scale(1.15);
+    animation: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  }
+  .hero-compare-knob svg {
+    flex-shrink: 0;
+    margin: -2px;
+  }
+
+  /* Side labels */
+  .hero-compare-label {
+    display: block;
+    position: absolute;
+    z-index: 9;
+    top: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+  }
+  .hero-compare-label--left {
+    left: 12px;
+    background: rgba(15, 32, 39, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .hero-compare-label--right {
+    right: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: var(--color-deccan-slate);
+  }
+
+  /* Drag hint overlay */
+  .hero-swipe-hint {
+    display: flex;
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(15, 32, 39, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.6s ease;
+  }
+  .hero-swipe-hint svg {
+    animation: swipeHandMove 1.5s ease-in-out infinite;
+  }
+  .hero-swipe-hint.dismissed {
+    opacity: 0;
+  }
+  @keyframes swipeHandMove {
+    0%, 100% { transform: translateX(0); }
+    30% { transform: translateX(-16px); }
+    70% { transform: translateX(16px); }
+  }
 }
 
 /* ============================================

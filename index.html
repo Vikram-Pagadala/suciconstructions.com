@@ -14,7 +14,7 @@
   <link rel="canonical" href="https://www.suciconstructions.com/">
   <link rel="preload" href="assets/fonts/bodoni-moda-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css?v=20261011">
+  <link rel="stylesheet" href="style.css?v=20261029b">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -122,7 +122,7 @@
   <main id="main-content">
 
     <!-- HERO -->
-    <section class="hero-section" id="hero-reveal-section" aria-label="From structural design to completed building" style="--x: 50%; --y: 50%; --r: 0px; --feather: 0px; --mask-center: transparent; --mask-edge: black;">
+    <section class="hero-section" id="hero-reveal-section" aria-label="From structural design to completed building" style="--x: 66.8%; --y: 19.8%; --r: 78px; --feather: 28px; --mask-center: transparent; --mask-edge: black;">
       <div class="hero-image-stage" id="hero-stage">
         <!-- Bottom layer: Finished building -->
         <div class="hero-layer hero-layer-final">
@@ -161,6 +161,32 @@
           <span class="ring-tick" data-pos="bottom"></span>
           <span class="ring-tick" data-pos="left"></span>
           <span class="ring-label" id="hero-ring-label">FINISHED</span>
+        </div>
+
+        <!-- Desktop: Hover discovery hint (auto-dismisses on first hover) -->
+        <div class="hero-hint" id="hero-hint" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+          <span>Hover anywhere to explore</span>
+        </div>
+
+        <!-- Mobile: Before/After comparison slider -->
+        <div class="hero-compare" id="hero-compare">
+          <div class="hero-compare-track">
+            <div class="hero-compare-line"></div>
+            <button type="button" class="hero-compare-knob" id="hero-compare-knob" aria-label="Drag to compare structure and finished building">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="hero-compare-line"></div>
+          </div>
+        </div>
+        <span class="hero-compare-label hero-compare-label--left">STRUCTURE</span>
+        <span class="hero-compare-label hero-compare-label--right">FINISHED</span>
+
+        <!-- Mobile: Drag hint overlay (auto-dismisses) -->
+        <div class="hero-swipe-hint" id="hero-swipe-hint" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V3a2 2 0 0 0-4 0v10"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8H12a8 8 0 0 1-6.3-3L2.2 14.8a1.7 1.7 0 0 1 2.6-2.2L6 14"/></svg>
+          <span>Drag to compare</span>
         </div>
       </div>
 
@@ -408,6 +434,6 @@
     </div>
   </footer>
 
-  <script src="main.js?v=20261011"></script>
+  <script src="main.js?v=20261029b"></script>
 </body>
 </html>

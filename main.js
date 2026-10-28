@@ -98,17 +98,22 @@
   var toggleHeroBtn = document.getElementById('toggle-hero-btn');
 
   if (heroSection && heroStage && heroRing) {
-    var LENS_RADIUS = 80;
+    // Exact resting coordinates framing the "SUCI CONSTRUCTIONS" logo on the building facade
+    var LOGO_X = 66.8;
+    var LOGO_Y = 19.8;
+    var LOGO_R = 78;
+
+    var LENS_RADIUS = 85;
     var FEATHER = 28;
     var LERP = 0.14;
 
-    var currX = 50;
-    var currY = 50;
-    var currR = 0;
+    var currX = LOGO_X;
+    var currY = LOGO_Y;
+    var currR = LOGO_R;
 
-    var targetX = 50;
-    var targetY = 50;
-    var targetR = 0;
+    var targetX = LOGO_X;
+    var targetY = LOGO_Y;
+    var targetR = LOGO_R;
 
     var isInside = false;
     var isVisible = true;
@@ -136,11 +141,13 @@
         if (entries[0] && entries[0].contentRect) {
           stageWidth = entries[0].contentRect.width;
           stageHeight = entries[0].contentRect.height;
+          applyHeroStyles();
         }
       });
       heroRo.observe(heroStage);
     }
     updateStageRect();
+    applyHeroStyles();
 
     function applyHeroStyles() {
       var r = currR > 0.1 ? currR : 0;
@@ -214,7 +221,9 @@
 
     heroStage.addEventListener('pointerleave', function () {
       isInside = false;
-      targetR = 0;
+      targetX = LOGO_X;
+      targetY = LOGO_Y;
+      targetR = LOGO_R;
       startHeroLoop();
     });
 
@@ -245,6 +254,122 @@
         heroSection.style.setProperty('--mask-edge', isShowingFinished ? 'transparent' : 'black');
         if (heroRingLabel) {
           heroRingLabel.textContent = isShowingFinished ? 'STRUCTURE' : 'FINISHED';
+        }
+      });
+    }
+
+    // ── HERO DISCOVERY HINTS & MOBILE COMPARISON SLIDER ──
+    var isTouchDevice = window.matchMedia && window.matchMedia('(hover: none)').matches;
+    var heroHintEl = document.getElementById('hero-hint');
+    var heroSwipeHintEl = document.getElementById('hero-swipe-hint');
+
+    if (isTouchDevice) {
+      // ── MOBILE: Before/After Comparison Slider ──
+      var userTouchedSlider = false;
+
+      function updateSplit(clientX) {
+        var rect = heroStage.getBoundingClientRect();
+        var pct = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100));
+        heroStage.style.setProperty('--split', pct + '%');
+      }
+
+      // Initialize slider at center
+      heroStage.style.setProperty('--split', '50%');
+
+      function dismissSwipeHint() {
+        if (heroSwipeHintEl && !heroSwipeHintEl.classList.contains('dismissed')) {
+          heroSwipeHintEl.classList.add('dismissed');
+          setTimeout(function () {
+            if (heroSwipeHintEl) heroSwipeHintEl.style.display = 'none';
+          }, 700);
+        }
+      }
+
+      // Auto-dismiss hint after 4 seconds
+      setTimeout(dismissSwipeHint, 4000);
+
+      // Touch handlers for slider dragging
+      heroStage.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches[0]) {
+          userTouchedSlider = true;
+          updateSplit(e.touches[0].clientX);
+          dismissSwipeHint();
+        }
+      }, { passive: true });
+
+      heroStage.addEventListener('touchmove', function (e) {
+        if (userTouchedSlider && e.touches && e.touches[0]) {
+          updateSplit(e.touches[0].clientX);
+        }
+      }, { passive: true });
+
+      // Auto-demo: briefly sweep the slider to show it's interactive
+      setTimeout(function () {
+        if (userTouchedSlider) return;
+        var start = null;
+        var duration = 1400;
+        function demoFrame(ts) {
+          if (userTouchedSlider) {
+            heroStage.style.setProperty('--split', '50%');
+            return;
+          }
+          if (!start) start = ts;
+          var t = Math.min((ts - start) / duration, 1);
+          var offset = Math.sin(t * Math.PI * 2) * 22;
+          heroStage.style.setProperty('--split', (50 + offset) + '%');
+          if (t < 1) requestAnimationFrame(demoFrame);
+        }
+        requestAnimationFrame(demoFrame);
+      }, 1200);
+
+    } else {
+      // ── DESKTOP: Auto-Hint Animation & Discovery Tooltip ──
+      var hasHeroInteracted = false;
+
+      // Show the discovery tooltip after a short delay
+      setTimeout(function () {
+        if (!hasHeroInteracted && heroHintEl) {
+          heroHintEl.classList.add('visible');
+        }
+      }, 1500);
+
+      // Auto-demo: Starts at SUCI logo -> gently sweeps across building -> ends right back at SUCI logo
+      setTimeout(function () {
+        if (hasHeroInteracted || !isVisible) return;
+        // Sweep down to reveal structural columns & lower facade
+        targetX = 63.5;
+        targetY = 52.0;
+        targetR = LENS_RADIUS;
+        startHeroLoop();
+
+        setTimeout(function () {
+          if (hasHeroInteracted) return;
+          // Sweep to side
+          targetX = 72.0;
+          targetY = 42.0;
+          startHeroLoop();
+        }, 900);
+
+        setTimeout(function () {
+          if (hasHeroInteracted) return;
+          // Return and end back at SUCI CONSTRUCTIONS logo
+          targetX = LOGO_X;
+          targetY = LOGO_Y;
+          targetR = LOGO_R;
+          startHeroLoop();
+        }, 1900);
+      }, 2000);
+
+      // Dismiss hint on first real hover interaction
+      heroStage.addEventListener('pointerenter', function () {
+        if (!hasHeroInteracted) {
+          hasHeroInteracted = true;
+          if (heroHintEl) {
+            heroHintEl.classList.add('dismissed');
+            setTimeout(function () {
+              if (heroHintEl) heroHintEl.style.display = 'none';
+            }, 500);
+          }
         }
       });
     }
