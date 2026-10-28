@@ -600,9 +600,6 @@ a:focus-visible {
     height: calc(100vh - 76px);
     height: calc(100svh - 76px);
   }
-  .hero-layer,
-  .hero-layer picture,
-  .hero-layer img { object-position: 70% 20%; }
 }
 @media (min-width: 768px) and (max-width: 1023px) {
   .hero-section { padding-top: 80px; }
@@ -849,6 +846,87 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
+/* ---- Hero: Mobile/tablet text overlay ----
+   Copy sits on a light scrim at the bottom of the full-screen image. Only the
+   buttons take touches, so touching anywhere else still drives the lens. */
+@media (max-width: 1023px) {
+  .hero-section { grid-template-columns: minmax(0, 1fr); }
+  .hero-image-stage {
+    grid-area: 1 / 1;
+    min-height: 560px;
+  }
+  .hero-layer,
+  .hero-layer picture,
+  .hero-layer img { object-position: 70% 20%; }
+  .hero-image-stage::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 72%;
+    z-index: 4;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(248, 250, 252, 0.96) 0%,
+      rgba(248, 250, 252, 0.9) 48%,
+      rgba(248, 250, 252, 0.55) 72%,
+      rgba(248, 250, 252, 0) 100%);
+  }
+  .hero-content-container {
+    grid-area: 1 / 1;
+    align-items: flex-end;
+    padding-top: 0;
+    padding-bottom: 24px;
+  }
+  .hero-content,
+  .hero-actions { pointer-events: none; }
+  .hero-content a,
+  .hero-content button { pointer-events: auto; }
+
+  .hero-eyebrow { margin-bottom: 10px; }
+  .hero-headline { margin-bottom: 12px; }
+  .hero-headline br { display: none; }
+  .hero-sub {
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .hero-actions .cta-button-primary,
+  .hero-actions .cta-button-secondary {
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+  .toggle-hero-btn {
+    padding: 8px 18px;
+    font-size: 11px;
+  }
+}
+/* Narrow phones: keep headline on two lines and both CTAs on one row */
+@media (max-width: 379px) {
+  .hero-headline { font-size: 29px; }
+  .hero-actions { flex-wrap: nowrap; gap: 8px; }
+  .hero-actions .cta-button-primary,
+  .hero-actions .cta-button-secondary {
+    padding: 11px 14px;
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+}
+/* Short screens: tighten vertical rhythm so the copy stays clear of the logo lens */
+@media (max-width: 1023px) and (max-height: 700px) {
+  .hero-eyebrow { margin-bottom: 6px; }
+  .hero-headline { margin-bottom: 8px; }
+  .hero-sub { line-height: 1.45; margin-bottom: 14px; }
+  .hero-actions { margin-bottom: 10px; }
+  .hero-content-container { padding-bottom: 16px; }
+}
+
 /* ---- Hero: Discovery Hint (hover on desktop, touch on mobile) ---- */
 .hero-hint {
   position: absolute;
@@ -885,7 +963,6 @@ a:focus-visible {
 }
 .hero-hint-touch { display: none; }
 @media (hover: none) {
-  .hero-hint { bottom: 20px; right: 16px; }
   .hero-hint-pointer { display: none; }
   .hero-hint-touch { display: block; }
 }
@@ -897,6 +974,17 @@ a:focus-visible {
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity 0.4s ease, transform 0.4s ease;
+}
+/* Mobile/tablet: hint floats in the open facade between the logo lens and the copy */
+@media (max-width: 1023px) {
+  .hero-hint {
+    top: 40%;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: max-content;
+    margin: 0 auto;
+  }
 }
 
 /* ============================================
